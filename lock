@@ -1,0 +1,33 @@
+#!/bin/bash
+# Optimistic lock wrapper | Spencer Tipping
+# Licensed under the terms of the MIT source code license
+
+# Uses optimistic file-based locking to execute a command, and waits
+# if the lock is already taken.
+#
+# Usage:
+# lock lock-name command [arguments...]
+
+if [[ $# == 0 ]]; then
+  echo 'Usage: lock lock-name command [arguments...]'
+  exit 1
+fi
+
+locks=~/.locks
+mkdir -p $locks
+
+name="$1"
+shift
+
+while [[ -e "$locks/$name" && -d /proc/$(< $locks/$name) ]]; do
+  echo "Waiting for process $(< $locks/$name) to release lock $name..."
+  sleep 1
+done
+
+# Take the lock (subject to race conditions in pathological cases)
+echo -n $$ > "$locks/$name"
+"$@"
+return_code=$?
+
+rm -f "$locks/$name"
+exit $return_code

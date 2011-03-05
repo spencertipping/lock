@@ -1,0 +1,28 @@
+Optimistic locking for shell commands
+
+Lock is a tool to make sure you run something only once at a time. For example:
+
+$ lock foo sleep 60 &
+[1] pidX
+$ lock foo echo hi
+Waiting for process pidX to release lock foo...
+Waiting for process pidX to release lock foo...
+Waiting for process pidX to release lock foo...
+(60 times)
+hi
+[1]+  Done
+$
+
+Because both commands were run with the lock "foo", the second waited for the
+first to return before running. Lock is smart about finding dead programs:
+
+$ lock zombie sleep 60 &
+[1] pidX
+$ kill -9 $!
+[1]+  Killed
+$ lock zombie echo hi
+hi
+$
+
+Because /proc/pidX wasn't there, lock assumed that the process had finished but
+failed to delete the lockfile. It then proceeded as if no lock had existed.
