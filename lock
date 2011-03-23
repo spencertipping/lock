@@ -19,12 +19,11 @@ mkdir -p $locks
 name="$1"
 shift
 
-should_wait() {
-  [[ -e "$locks/$name" && -d /proc/$(< $locks/$name) ]]
-}
-
-should_wait && echo "Waiting for process $(< $locks/$name) to release lock $name..."
-while should_wait; do
+previous_pid=
+while [[ -e "$locks/$name" && -d /proc/$(< $locks/$name) ]]; do
+  pid=$(< $locks/$name)
+  [[ $previous_pid != $pid ]] && echo "Waiting for process $pid to release lock $name..."
+  previous_pid=$pid
   sleep 1
 done
 
