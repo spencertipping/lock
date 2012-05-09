@@ -14,15 +14,4 @@ hi
 $
 
 Because both commands were run with the lock "foo", the second waited for the
-first to return before running. Lock is smart about finding dead programs:
-
-$ lock zombie sleep 60 &
-[1] pidX
-$ kill -9 $!
-[1]+  Killed
-$ lock zombie echo hi
-hi
-$
-
-Because /proc/pidX wasn't there, lock assumed that the process had finished but
-failed to delete the lockfile. It then proceeded as if no lock had existed.
+first to return before running.

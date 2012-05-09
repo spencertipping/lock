@@ -14,23 +14,24 @@ if [[ $# == 0 ]]; then
 fi
 
 locks=~/.locks
-mkdir -p $locks
+mkdir -p "$locks"
 
 name="$1"
 shift
 
+# Repeatedly attempt to take the lock, which in this case means creating
+# a directory.
 previous_pid=
-while [[ -e "$locks/$name" && -d /proc/$(< $locks/$name) ]]; do
-  pid=$(< $locks/$name)
+while ! mkdir "$locks/$name" >& /dev/null; do
+  pid=$(< "$locks/$name/pid")
   [[ $previous_pid != $pid ]] && echo "Waiting for process $pid to release lock $name..."
   previous_pid=$pid
   sleep 1
 done
 
-# Take the lock (subject to race conditions in pathological cases)
-echo -n $$ > "$locks/$name"
-"$@"
+echo -n $$ > "$locks/$name/pid"
+eval "$@"
 return_code=$?
 
-rm -f "$locks/$name"
+rm -f "$locks/$name/pid" && rmdir "$locks/$name"
 exit $return_code
